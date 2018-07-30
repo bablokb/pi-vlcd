@@ -1,0 +1,44 @@
+#:kivy 1.0.9
+# -----------------------------------------------------------------------------
+# A simple kivy-app implementing a virtual LCD-screen with a row of buttons.
+#
+# Author: Bernhard Bablok
+# License: GPL3
+#
+# Website: https://github.com/bablokb/pi-vlcd
+#
+# -----------------------------------------------------------------------------
+
+<StdButton@Button>:
+  font_size: 25
+  markup: True
+
+<VlcdWidget>:
+  lcd_display: id_text_input
+  orientation: 'vertical'
+  padding: 20
+  spacing: 10
+
+  TextInput:
+    id: id_text_input
+    readonly: True
+    background_color: [0,0,1,1]
+    foreground_color: [1,1,1,1]
+    font_size: 25
+    font_name: 'DroidSansMono'
+    size_hint: 1,10
+      
+  BoxLayout:
+    orientation: 'horizontal'
+    padding: 20
+    spacing: 5
+
+    StdButton:
+      text: "uptime"
+      on_press: root.on_uptime(args)
+    StdButton:
+      text: "df"
+      on_press: root.on_df(args)
+    StdButton:
+      text: "ip"
+      on_press: root.on_ip(args)
