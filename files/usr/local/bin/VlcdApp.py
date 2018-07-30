@@ -35,7 +35,7 @@ class VlcdWidget(BoxLayout):
   def on_ip(self,button):
     Clock.schedule_once(self.show_ip,0)
 
-  def show_uptime(self,args):
+  def show_uptime(self,_):
     hostname = subprocess.check_output("hostname",stderr=subprocess.STDOUT).split()
     uptime = subprocess.check_output("uptime",stderr=subprocess.STDOUT).split()
     ausgabe = """Hostname: %s
@@ -47,12 +47,12 @@ Last:     %s %s %s""" % (hostname[0],uptime[0],uptime[1],uptime[3],
     self.lcd_display.text = ausgabe
     self.lcd_display.cursor = (0,0)
 
-  def show_df(self,args):
-    df = subprocess.check_output("df",stderr=subprocess.STDOUT)
-    print df
+  def show_df(self,_):
+    args = ["df","-h","--output=source,size,avail,pcent"]
+    df = subprocess.check_output(args,stderr=subprocess.STDOUT)
     self.lcd_display.text = df
 
-  def show_ip(self,args):
+  def show_ip(self,_):
     ip = subprocess.check_output("/sbin/ifconfig",stderr=subprocess.STDOUT)
     print ip
     self.lcd_display.text = ip
