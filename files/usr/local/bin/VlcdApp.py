@@ -53,10 +53,14 @@ Last:     %s %s %s""" % (hostname[0],uptime[0],uptime[1],uptime[3],
     self.lcd_display.text = df
 
   def show_ip(self,_):
-    ip = subprocess.check_output("/sbin/ifconfig",stderr=subprocess.STDOUT)
-    print ip
-    self.lcd_display.text = ip
-
+    args = ["ip","-o","addr","show","up"]
+    ip = subprocess.check_output(args,stderr=subprocess.STDOUT).split('\n')
+    text = "Network:"
+    for line in ip:
+      line = line.split()
+      if line:
+        text = "{0}\n{1} {2} {3} {4}".format(text,*line[:4])
+    self.lcd_display.text = text
 
  # --- main application class   ----------------------------------------------
 
