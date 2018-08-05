@@ -62,7 +62,7 @@ Last:     %s %s %s""" % (hostname[0],uptime[0],uptime[1],uptime[3],
         text = "{0}\n{1} {2} {3} {4}".format(text,*line[:4])
     self.lcd_display.text = text
 
- # --- main application class   ----------------------------------------------
+# --- main application class   ------------------------------------------------
 
 class VlcdApp(App):
   """ application root class """
