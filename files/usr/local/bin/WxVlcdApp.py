@@ -9,7 +9,25 @@
 #
 # -----------------------------------------------------------------------------
 
+import threading, subprocess, re
 import wx
+
+# --- helper class for asynchronous events   ----------------------------------
+
+SYSCMD_EVENT_TYPE = wx.NewEventType()
+EVT_SYSCMD = wx.PyEventBinder(SYSCMD_EVENT_TYPE,1)
+
+class SysCmdFinishEvent(wx.PyCommandEvent):
+  """ wrap result of a system-command into an event """
+
+  def __init__(self,ev_id,value=None):
+    wx.PyCommandEvent.__init__(self,SYSCMD_EVENT_TYPE,ev_id)
+    self._value = value
+
+  def get_output(self):
+    return self._value
+
+# --- main application frame   ------------------------------------------------
 
 class AppFrame(wx.Frame):
   """ Application toplevel frame """
@@ -22,6 +40,8 @@ class AppFrame(wx.Frame):
     #self.SetMenuBar(self.create_menu())
     #self.CreateStatusBar()
     self.create_controls()
+    self.Bind(EVT_SYSCMD, self.on_syscmd_result)
+    self.on_uptime(None)
 
   # --- create the panel with all controls   ----------------------------------
 
@@ -72,39 +92,82 @@ class AppFrame(wx.Frame):
 
   def create_outputarea(self,parent):
     text_panel = wx.Panel(parent)
-    text_panel.SetBackgroundColour('blue')
+    text_panel.SetBackgroundColour(wx.BLUE)
     
-    text = wx.StaticText(text_panel, -1, "Hello World!")
-    text.SetForegroundColour(wx.WHITE)
-    text.SetFont(wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD))
-    text.SetSize(text.GetBestSize())
+    self._output_text = wx.StaticText(text_panel, -1,"")
+    self._output_text.SetForegroundColour(wx.WHITE)
+    self._output_text.SetFont(wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD))
+    self._output_text.SetSize(self._output_text.GetBestSize())
 
     hbox = wx.BoxSizer(wx.HORIZONTAL)
-    hbox.Add(text,1,wx.EXPAND,0)
+    hbox.Add(self._output_text,1,wx.EXPAND,0)
     text_panel.SetSizer(hbox)
-    text_panel.Layout()
     return text_panel
 
   # --- on_uptime handler   ---------------------------------------------------
 
   def on_uptime(self,evt):
-    pass
+    """ start asynchronous command """
+    threading.Thread(target=self.get_uptime).start()
 
   # --- on_df handler   -------------------------------------------------------
 
   def on_df(self,evt):
-    pass
+    """ start asynchronous command """
+    threading.Thread(target=self.get_df).start()
 
   # --- on_ip handler   -------------------------------------------------------
 
   def on_ip(self,evt):
-    pass
+    """ start asynchronous command """
+    threading.Thread(target=self.get_ip).start()
+
+  # --- event-handler for updates to the text field   -------------------------
+
+  def on_syscmd_result(self,evt):
+    self._output_text.SetLabelText(evt.get_output())
 
   # --- exit-handler   --------------------------------------------------------
 
   def on_exit(self,evt):
     """ exit-handler """
     self.Close()
+
+  # --- get uptime (asynchronous execution)   ---------------------------------
+
+  def get_uptime(self):
+    hostname = subprocess.check_output("hostname",stderr=subprocess.STDOUT).split()
+    uptime = subprocess.check_output("uptime",stderr=subprocess.STDOUT).split()
+    output = """Hostname: %s
+Uhrzeit:  %s
+Uptime:   %s Tage, %s Stunden
+Benutzer: %s
+Last:     %s %s %s""" % (hostname[0],uptime[0],uptime[1],uptime[3],
+                 uptime[5],uptime[8],uptime[9],uptime[10])
+    evt = SysCmdFinishEvent(-1,output)
+    wx.PostEvent(self,evt)
+
+  # --- get free disk space (asynchronous execution)   ------------------------
+
+  def get_df(self):
+    args   = ["df","-h","--output=source,size,avail,pcent"]
+    output = subprocess.check_output(args,stderr=subprocess.STDOUT)
+    #output = re.sub(r'\t','    ',output)
+    evt = SysCmdFinishEvent(-1,output)
+    wx.PostEvent(self,evt)
+
+  # --- get ip information (asynchronous execution)   -------------------------
+
+  def get_ip(self):
+    args = ["ip","-o","addr","show","up"]
+    ip = subprocess.check_output(args,stderr=subprocess.STDOUT).split('\n')
+    output = "Network:"
+    for line in ip:
+      line = line.split()
+      if line:
+        output = "{0}\n{1} {2} {3} {4}".format(output,*line[:4])
+    evt = SysCmdFinishEvent(-1,output)
+    wx.PostEvent(self,evt)
 
 # --- main application class   ------------------------------------------------
 
