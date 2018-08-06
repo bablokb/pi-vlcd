@@ -96,7 +96,7 @@ class AppFrame(wx.Frame):
     
     self._output_text = wx.StaticText(text_panel, -1,"")
     self._output_text.SetForegroundColour(wx.WHITE)
-    self._output_text.SetFont(wx.Font(14, wx.SWISS, wx.NORMAL, wx.BOLD))
+    self._output_text.SetFont(wx.Font(14, wx.MODERN, wx.NORMAL, wx.BOLD))
     self._output_text.SetSize(self._output_text.GetBestSize())
 
     hbox = wx.BoxSizer(wx.HORIZONTAL)
