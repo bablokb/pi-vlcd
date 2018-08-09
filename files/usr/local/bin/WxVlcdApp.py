@@ -163,14 +163,15 @@ class AppFrame(wx.Frame):
   # --- get uptime (asynchronous execution)   ---------------------------------
 
   def get_uptime(self):
-    hostname = subprocess.check_output("hostname",stderr=subprocess.STDOUT).split()
-    uptime = subprocess.check_output("uptime",stderr=subprocess.STDOUT).split()
+    hostname = self.read_hostname()
+    tm     = time.strftime("%H:%M:%S")
+    (uptime,idle) = self.read_uptime()
+    load   = self.read_loadavg()
     output = """Hostname: %s
-Uhrzeit:  %s
-Uptime:   %s Tage, %s Stunden
-Benutzer: %s
-Last:     %s %s %s""" % (hostname[0],uptime[0],uptime[1],uptime[3],
-                 uptime[5],uptime[8],uptime[9],uptime[10])
+Time:     %s
+Uptime:   %s
+Idle:     %s
+Load:     %s""" % (hostname,tm,uptime,idle,load)
     evt = SysCmdFinishEvent(-1,output)
     wx.PostEvent(self,evt)
 
@@ -195,6 +196,48 @@ Last:     %s %s %s""" % (hostname[0],uptime[0],uptime[1],uptime[3],
         output = "{0}\n{1} {2} {3} {4}".format(output,*line[:4])
     evt = SysCmdFinishEvent(-1,output)
     wx.PostEvent(self,evt)
+
+  # --- read hostname   -------------------------------------------------------
+
+  def read_hostname(self):
+    """ read hostname from /proc/sys/kernel/hostname """
+
+    with open("/proc/sys/kernel/hostname") as f:
+      hostname = f.read().split()
+      f.close()
+    return hostname[0]
+
+  # --- read uptime   ---------------------------------------------------------
+
+  def read_uptime(self):
+    """ read uptime-info from /proc/uptime """
+
+    with open("/proc/uptime") as f:
+      info = f.read().split()
+      f.close()
+    uptime = int(float(info[0]))
+    idle   = int(float(info[1]))
+
+    m,u_s   = divmod(uptime,60)
+    h,u_m   = divmod(m,60)
+    u_d,u_h = divmod(h,24)
+
+    m,i_s   = divmod(idle,60)
+    h,i_m   = divmod(m,60)
+    i_d,i_h = divmod(h,24)
+
+    return ("{0:d} days, {1:02d}:{2:02d}:{3:02d}".format(u_d,u_h,u_m,u_s),
+            "{0:d} days, {1:02d}:{2:02d}:{3:02d}".format(i_d,i_h,i_m,i_s))
+
+  # --- read load   -----------------------------------------------------------
+
+  def read_loadavg(self):
+    """ read load-info from /proc/loadavg """
+
+    with open("/proc/loadavg") as f:
+      info = f.read().split()
+      f.close()
+    return ' '.join(info[:3])
 
 # --- main application class   ------------------------------------------------
 
