@@ -9,8 +9,38 @@
 #
 # -----------------------------------------------------------------------------
 
-import threading, subprocess, re
+import os, time, threading, subprocess, re, socket
 import wx
+
+# --- wait for X11 (helper function)   ----------------------------------------
+
+X11_PORT = 6000         # port-number of remote X11-server
+X11_WAIT = 5            # sleep time while waiting for X11
+
+def wait_for_X11():
+  # get host and port from DISPLAY-definition
+  display_info = os.getenv("DISPLAY","").split(":")
+  host   = display_info[0]
+  if len(host) == 0:
+    # local display or no display
+    return
+  if len(display_info) < 2:
+    # assume display-number 0
+    display_info.append("0")
+  dispnr = int(float(display_info[1]))   # expected format: display.screen
+  port = X11_PORT + dispnr
+
+  # now loop until the server is available
+  while True:
+    try:
+      s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+      s.settimeout(0.5)
+      s.connect((host,port))
+      s.close()
+      return
+    except Exception as e:
+      print("waiting for X11 on {0} ...".format(host))
+      time.sleep(X11_WAIT)
 
 # --- helper class for asynchronous events   ----------------------------------
 
@@ -48,13 +78,10 @@ class AppFrame(wx.Frame):
   def create_controls(self):
     """ create panel with all controls """
 
-    #vpanel = wx.Panel(self)
-    vpanel = self
     vbox = wx.BoxSizer(wx.VERTICAL)
-    vbox.Add(self.create_outputarea(vpanel),1, wx.ALL|wx.EXPAND,10)
-    vbox.Add(self.create_buttons(vpanel),0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL,10)
-    vpanel.SetSizer(vbox)
-    #vpanel.Layout()
+    vbox.Add(self.create_outputarea(self),1, wx.ALL|wx.EXPAND,10)
+    vbox.Add(self.create_buttons(self),0, wx.ALL|wx.ALIGN_CENTER_HORIZONTAL,10)
+    self.SetSizer(vbox)
 
   # --- create the application menu   -----------------------------------------
 
@@ -177,10 +204,11 @@ class WxVlcdApp(wx.App):
     self.SetTopWindow(frame)
     frame.Show(True)
     return True
-        
+
 # --- main program   ----------------------------------------------------------
 
 if __name__ == '__main__':
+  wait_for_X11()
   app = WxVlcdApp(redirect=False)
   app.MainLoop()
 
