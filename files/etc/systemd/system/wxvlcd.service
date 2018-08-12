@@ -1,0 +1,25 @@
+# --------------------------------------------------------------------------
+# Systemd service Definition for wxvlcd.service.
+#
+# The service starts the script /usr/local/bin/WxVlcdApp.py
+#
+# Author: Bernhard Bablok
+# License: GPL3
+#
+# Website: https://github.com/bablokb/pi-vlcd
+#
+# --------------------------------------------------------------------------
+
+[Unit]
+Description=Virtual LCD service
+After=multi-user.target
+ 
+[Service]
+Type=simple
+User=pi
+Environment=hostname-of-X11-server:0
+ExecStart=/usr/local/bin/WxVlcdApp.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
